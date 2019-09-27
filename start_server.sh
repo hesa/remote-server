@@ -29,12 +29,14 @@ swinput_dispatcher()
             KEY="[KEY_UP]"
             ;;
         *)
-            error_log "Failed dispatching: \"$1\""
-            return
+            # TODO: only debugging - send a key if failure - 
+            KEY="$1"
+#            error_log "Failed dispatching: \"$1\""
+ #           return
     esac
 
-    echo "Sending $KEY to swinput"
-
+    echo "Sending \"$KEY\" to swinput"
+    echo "$KEY" > /dev/swkeybd
 }
 
 listen_server()
