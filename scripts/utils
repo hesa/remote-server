@@ -1,0 +1,61 @@
+
+exit_on_failure()
+{
+    if [ $1 -ne 0 ]
+    then
+	if [ "$2" != "" ]
+	then
+	    error_log "$2"
+	    exit $1
+	else
+	    error_log "something failed"
+	    exit $1
+	fi
+    fi
+}
+
+log_impl()
+{
+    LEVEL=$1
+    shift
+    echo "[$(date)] $LEVEL - $*"
+}
+
+# quiet logging
+logq_impl()
+{
+    echo "$*"
+}
+
+logn_impl()
+{
+    LEVEL=$1
+    shift
+    echo -n "[$(date)] $LEVEL - $*"
+}
+
+error_log()
+{
+    log_impl "ERROR" $*
+}
+
+debug_log()
+{
+    log_impl "DEBUG" $*
+}
+
+info_log()
+{
+    log_impl "INFO" $*
+}
+
+info_logn()
+{
+    logn_impl "INFO" $*
+}
+
+info_logq()
+{
+    logq_impl "$*"
+}
+

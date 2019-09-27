@@ -1,57 +1,27 @@
 #!/bin/bash
 
-REMOTE_PRESS_PORT=9876
+# default dispatchers
+SERVER_IMPL=network
+DISPATCHER_IMPL=swinput
+SERVER=$(dirname $0)/scripts/server/$SERVER_IMPL/server.sh
+DISPATCHER=$(dirname $0)/scripts/dispatcher/$DISPATCHER_IMPL/dispatcher.sh
 
-error_log()
-{
-    echo "ERROR: $*"
-}
+REMOTE_SERVER_UTILS="scripts/utils"
+if [[ -f "${REMOTE_SERVER_UTILS}" ]]
+then
+    . "${REMOTE_SERVER_UTILS}"
+fi
 
-#
-# Dispatcher for SWINPUT / https://github.com/hesa/swinput
-#
-swinput_dispatcher()
-{
-    case "$1" in
-        "enter")
-            KEY="[KEY_ENTER]"
-            ;;
-        "left")
-            KEY="[KEY_LEFT]"
-            ;;
-        "left")
-            KEY="[KEY_RIGHT]"
-            ;;
-        "down")
-            KEY="[KEY_DOWN]"
-            ;;
-        "up")
-            KEY="[KEY_UP]"
-            ;;
-        *)
-            # TODO: only debugging - send a key if failure - 
-            KEY="$1"
-#            error_log "Failed dispatching: \"$1\""
- #           return
-    esac
+SLEEP_INTERVAL=0.2
 
-    echo "Sending \"$KEY\" to swinput"
-    echo "$KEY" > /dev/swkeybd
-}
-
-listen_server()
-{
-    echo "Starting server (and dispatcher)"
-    nc -l -p $REMOTE_PRESS_PORT | $0 --command-dispatcher
-}
 
 command_dispatcher()
 {
-    echo "Starting dispatcher"
+    info_log "Starting dispatcher"
     while read LINE
     do
-        echo "Recevied command: $LINE"
-        swinput_dispatcher $LINE
+        info_log "Recevied command: $LINE"
+	$DISPATCHER $DISPATCHER_ARGS $LINE
     done
 }
 
@@ -59,9 +29,9 @@ start_server_impl()
 {
     while (true)
     do
-        $0 --listen-server
-        sleep 1
-        echo "Restarting server"
+        $SERVER $SERVER_ARGS
+        sleep $SLEEP_INTERVAL
+        info_log "Restarting server ($SERVER_IMPL)"
     done
 }
     
@@ -70,20 +40,41 @@ while [ "$1" != "" ]
 do
     case "$1" in
         "--listen-server")
-            listen_server
+	    start_server_impl
             exit 0
+            ;;
+        "--server")
+	    SERVER=$2
+	    shift
+            ;;
+        "--server-arguments")
+	    SERVER_ARGS=$2
+	    shift
+            ;;
+        "--dispatcher")
+	    DISPATCHER=$2
+            ;;
+        "--dispatcher-arguments")
+	    DISPATCHER_ARGS=$2
+	    shift
+            ;;
+        "--dispatcher-check")
+	    $DISPATCHER --check
+	    exit_on_failure $? "$DISPATCHER failure"
             ;;
         "--command-dispatcher")
             command_dispatcher
             exit 0
-            ;;
-        "--port")
-            REMOTE_PRESS_PORT=$2
-            shift
+	    shift
             ;;
         *)
             :
     esac
+    shift
 done
+
+# Check dispatcher before start
+$DISPATCHER --check
+exit_on_failure $? "$DISPATCHER failure. Can't run without a working dispatcher. Fix it and check it wih the command: $DISPATCHER --check"
 
 start_server_impl
