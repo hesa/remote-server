@@ -18,20 +18,20 @@ log_impl()
 {
     LEVEL=$1
     shift
-    echo "[$(date)] $LEVEL - $*"
+    echo "[$(date)] $LEVEL - $*" 1>&2
 }
 
 # quiet logging
 logq_impl()
 {
-    echo "$*"
+    echo "$*" 1>&2
 }
 
 logn_impl()
 {
     LEVEL=$1
     shift
-    echo -n "[$(date)] $LEVEL - $*"
+    echo -n "[$(date)] $LEVEL - $*" 1>&2
 }
 
 error_log()
