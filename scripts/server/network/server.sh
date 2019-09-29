@@ -12,8 +12,12 @@ REMOTE_PRESS_PORT="9876"
 
 start_server_impl()
 {
+    FIFO=/tmp/remote-server.fifo
+    rm -f "$FIFO"
+    mkfifo "$FIFO"
     info_log "Starting server (and dispatcher)"
-    nc -l -p "$REMOTE_PRESS_PORT" | "$REMOTE_SERVER" --command-dispatcher
+    cat "$FIFO" | "$REMOTE_SERVER" --command-dispatcher -i 2>&1 | nc -l -p "$REMOTE_PRESS_PORT" > $FIFO
+#    nc -l -p  | 
 }
 
 start_server_impl

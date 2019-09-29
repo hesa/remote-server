@@ -1,3 +1,4 @@
+LOG_FILE=/tmp/remote-server.log
 
 exit_on_failure()
 {
@@ -18,20 +19,20 @@ log_impl()
 {
     LEVEL=$1
     shift
-    echo "[$(date)] $LEVEL - $*" 1>&2
+    echo "[$(date)] $LEVEL - $*" >> $LOG_FILE
 }
 
 # quiet logging
 logq_impl()
 {
-    echo "$*" 1>&2
+    echo "$*" >> $LOG_FILE
 }
 
 logn_impl()
 {
     LEVEL=$1
     shift
-    echo -n "[$(date)] $LEVEL - $*" 1>&2
+    echo -n "[$(date)] $LEVEL - $*" >> $LOG_FILE
 }
 
 error_log()

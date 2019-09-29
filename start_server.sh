@@ -14,14 +14,54 @@ fi
 
 SLEEP_INTERVAL=0.2
 
+AUTHORIZED=false
+AUTH_FAIL_CNT=0
+USER=einar
+PASSWORD=hackner
 
 command_dispatcher()
 {
     info_log "Starting dispatcher"
-    while read LINE
+    while (true)
     do
-        info_log "Recevied command: $LINE"
-	$DISPATCHER $DISPATCHER_ARGS $LINE
+        debug_log "Reading data from user"
+        read -n 100  LINE
+        debug_log "  - LINE: $LINE"
+        if [ ${#LINE} -ge 100 ]
+        then
+            error_log "Command too big, bailing out"
+            exit 1
+        fi
+        if [ "${LINE}" = "" ]
+        then
+            info_log "Command empty, bailing out"
+            exit 0
+        fi
+        if [ "$AUTHORIZED" = "false" ]
+        then
+            COMMAND=$(echo $LINE | awk '{ print $1}')
+            REC_USER=$(echo $LINE | awk '{ print $2}')
+            REC_PASSWORD=$(echo $LINE | awk '{ print $3}')
+            if [ "$COMMAND" = "login" ] && \
+                   [ "$REC_USER" = "$USER" ] && \
+                   [ "$REC_PASSWORD" = "$PASSWORD" ] 
+            then
+                echo "login succeded"
+                info_log "$USER logged in ($AUTH_FAIL_CNT failed login attempts)"
+                AUTHORIZED=true
+            else
+                echo "login failed"
+                error_log "Incorrect user/password $AUTH_FAIL_CNT"
+                AUTH_FAIL_CNT=$(( AUTH_FAIL_CNT + 1 ))
+                SLEEP_INTERVAL=$(( AUTH_FAIL_CNT * AUTH_FAIL_CNT  ))
+                info_log "Sleeping $SLEEP_INTERVAL seconds"
+                sleep $SLEEP_INTERVAL
+            fi
+        else
+            echo "OK"
+            info_log "Recevied command: $LINE"
+	    $DISPATCHER $DISPATCHER_ARGS $LINE
+        fi
     done
 }
 
