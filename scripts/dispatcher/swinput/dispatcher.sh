@@ -22,7 +22,7 @@ swinput_dispatcher()
         "left")
             KEY="[KEY_LEFT]"
             ;;
-        "left")
+        "right")
             KEY="[KEY_RIGHT]"
             ;;
         "down")
