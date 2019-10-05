@@ -2,8 +2,13 @@
 
 # Introduction
 
-## Server
+# Starting the server
 
+```
+./start_server.sh
+```
+
+## Server
 
 ## Dispatcher
 
