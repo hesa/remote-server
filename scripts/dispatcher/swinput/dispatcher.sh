@@ -8,6 +8,8 @@ fi
 
 REMOTE_SERVER="$(dirname $0)/../../../start_server.sh"
 
+#trap "" SIGPIPE 
+
 
 SWINPUT_KBD_DEV=/dev/swkeybd
 #
@@ -63,5 +65,5 @@ then
 fi
 
 swinput_dispatcher $1
-
-
+info_log "swinput dispatcher finished"
+exit $?

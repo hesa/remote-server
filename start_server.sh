@@ -14,10 +14,12 @@ fi
 
 SLEEP_INTERVAL=0.2
 
+
 AUTHORIZED=false
 AUTH_FAIL_CNT=0
 USER=einar
 PASSWORD=hackner
+
 
 if [ "$PIN" = "" ]
 then
@@ -80,7 +82,14 @@ command_dispatcher()
     do
         debug_log "Reading data from user"
         read -n 100  LINE
-        debug_log "  - LINE: $LINE"
+        RET=$?
+        debug_log "  - LINE: $LINE   ($RET)"
+        
+        if [ ${RET} -ne 0 ]
+        then
+            error_log "Could not read, bailing out"
+            exit 22
+        fi
         if [ ${#LINE} -ge 100 ]
         then
             error_log "Command too big, bailing out"
@@ -89,7 +98,29 @@ command_dispatcher()
         if [ "${LINE}" = "" ]
         then
             info_log "Command empty, bailing out"
-            exit 0
+            continue
+        fi
+        if [ "${LINE}" = "exit" ]
+        then
+            info_log "Request to leave (and close) remote sever"
+            DISP=$(basename $DISPATCHER)
+#            info_log " - pkill $DISP"
+ #           pkill -9 $DISP
+  #          sleep 1
+   #         ps auxwww | grep $DISP | grep -v grep 
+            echo -n "start_server.sh pid: $$"
+
+            if [ -f  ${SERVER_PID_FILE} ]
+            then
+                SERVER_PID=$(cat  ${SERVER_PID_FILE})
+                if [  ${SERVER_PID} -gt 100 ]
+                then
+                    info_log "Killing server"
+                    kill ${SERVER_PID}
+                fi
+            fi
+            
+            exit 22
         fi
         if [ "$AUTHORIZED" = "false" ]
         then
@@ -118,14 +149,25 @@ command_dispatcher()
     done
 }
 
-start_server_impl()
+start_server_implementation()
 {
-    while (true)
-    do
-        $SERVER $SERVER_ARGS
+   while (true)
+   do
+        info_log "Starting server: $SERVER $SERVER_ARGS"
+        $SERVER $SERVER_ARGS &
+        SERVER_PID=$!
+        echo "$SERVER_PID" > ${SERVER_PID_FILE}
+        wait "$SERVER_PID"
+        RET=$?
+        info_log "  server died: $RET"
+        if [ $RET -eq 0 ] || [ $RET -eq 143 ] 
+        then
+            info_log "Will adhere to request to shut things down, basically I will die"
+            exit 0
+        fi
         sleep $SLEEP_INTERVAL
         info_log "Restarting server ($SERVER_IMPL)"
-    done
+   done
 }
     
 
@@ -133,7 +175,7 @@ while [ "$1" != "" ]
 do
     case "$1" in
         "--listen-server")
-	    start_server_impl
+	    start_server_implementation
             exit 0
             ;;
         "--server")
@@ -175,4 +217,4 @@ done
 $DISPATCHER --check
 exit_on_failure $? "$DISPATCHER failure. Can't run without a working dispatcher. Fix it and check it wih the command: $DISPATCHER --check"
 
-start_server_impl
+start_server_implementation

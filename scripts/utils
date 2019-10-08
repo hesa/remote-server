@@ -1,4 +1,7 @@
-LOG_FILE=/tmp/remote-server.log
+TMP_DIR=/tmp/remote-server
+mkdir -p ${TMP_DIR}
+LOG_FILE=${TMP_DIR}/remote-server.log
+SERVER_PID_FILE=${TMP_DIR}/server.pid
 
 exit_on_failure()
 {
